@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Hub de Carreira — Gestão</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#f1f5f9;color:#0f172a;font-size:14px}
+
+/* ─── TOP NAV ─────────────────────────── */
+.top-nav{background:#0f1b35;display:flex;align-items:center;padding:0 24px;height:52px;gap:4px}
+.top-nav-title{color:#94a3b8;font-size:12px;font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-right:20px;white-space:nowrap}
+.eixo-btn{padding:10px 18px;border:none;background:none;cursor:pointer;font-size:13px;color:#64748b;border-bottom:2px solid transparent;font-weight:600;white-space:nowrap;transition:all .15s;height:52px}
+.eixo-btn.active{color:#fff;border-bottom-color:#3b82f6}
+.eixo-btn:hover:not(.active){color:#e2e8f0}
+
+/* ─── INNER NAV ───────────────────────── */
+.inner-nav{background:#fff;border-bottom:1px solid #e2e8f0;display:flex;padding:0 24px;overflow-x:auto}
+.inner-btn{padding:11px 14px;border:none;background:none;cursor:pointer;font-size:12px;color:#64748b;border-bottom:2px solid transparent;white-space:nowrap;font-weight:500;transition:all .15s}
+.inner-btn.active{color:#0f172a;border-bottom-color:#3b82f6}
+.inner-btn:hover:not(.active){color:#0f172a}
+
+/* ─── LAYOUT ──────────────────────────── */
+.eixo{display:none}.eixo.active{display:block}
+.section{display:none;padding:28px 28px 48px;max-width:960px;margin:0 auto}.section.active{display:block}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.1em;text-transform:uppercase;color:#3b82f6;margin-bottom:4px}
+.page-title{font-size:22px;font-weight:700;color:#0f172a;line-height:1.2;margin-bottom:4px}
+.page-sub{font-size:13px;color:#64748b;margin-bottom:22px}
+
+/* ─── STAT CARDS ──────────────────────── */
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(120px,1fr));gap:10px;margin-bottom:22px}
+.stat{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px 16px;border-top:3px solid #e2e8f0}
+.stat.bl{border-top-color:#3b82f6}.stat.rd{border-top-color:#ef4444}
+.stat.or{border-top-color:#f97316}.stat.am{border-top-color:#eab308}
+.stat.gn{border-top-color:#22c55e}.stat.pu{border-top-color:#7c3aed}
+.stat-lbl{font-size:11px;color:#64748b;margin-bottom:4px}
+.stat-val{font-size:26px;font-weight:700;color:#0f172a;line-height:1}
+.stat-sub{font-size:11px;color:#94a3b8;margin-top:3px}
+
+/* ─── CARDS ───────────────────────────── */
+.card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:18px;margin-bottom:16px}
+.card-title{font-size:13px;font-weight:600;color:#0f172a;margin-bottom:12px}
+.two-col{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px}
+.lbl{font-size:11px;font-weight:700;letter-spacing:.07em;text-transform:uppercase;color:#94a3b8;margin:20px 0 10px}
+
+/* ─── SELECTION CARDS ─────────────────── */
+.sel-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:12px;margin-bottom:16px}
+.sel-card{border-radius:10px;padding:14px;border:1.5px solid transparent}
+.sel-card.hub{background:#f0fdf4;border-color:#86efac}
+.sel-card.eval{background:#fefce8;border-color:#fde047}
+.sel-card.open{background:#f8fafc;border-color:#e2e8f0;border-style:dashed}
+.sel-badge{font-size:10px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 8px;border-radius:4px;margin-bottom:8px;display:inline-block}
+.sel-badge.hub{background:#bbf7d0;color:#166534}
+.sel-badge.eval{background:#fef9c3;color:#713f12}
+.sel-badge.open{background:#e2e8f0;color:#64748b}
+.sel-name{font-size:15px;font-weight:700;color:#0f172a;margin-bottom:2px}
+.sel-meta{font-size:11px;color:#64748b;margin-bottom:6px}
+.sel-note{font-size:11px;color:#475569;line-height:1.5;border-top:1px solid rgba(0,0,0,.07);padding-top:6px;margin-top:6px}
+.sel-score{font-size:11px;font-weight:600;padding:2px 7px;border-radius:4px;float:right}
+.sel-score.alta{background:#fee2e2;color:#991b1b}
+.sel-score.mod{background:#ffedd5;color:#9a3412}
+.sel-score.ctx{background:#fef9c3;color:#713f12}
+
+/* ─── COMPARISON TABLE ────────────────── */
+.cmp-table{width:100%;border-collapse:collapse;font-size:12px}
+.cmp-table th{padding:9px 12px;text-align:left;font-size:11px;font-weight:600;color:#fff;background:#1e293b;border-right:1px solid #334155}
+.cmp-table th:last-child{border-right:none}
+.cmp-table td{padding:8px 12px;border-bottom:1px solid #f1f5f9;vertical-align:middle}
+.cmp-table tr:hover td{background:#f8fafc}
+.rank-num{font-weight:700;color:#94a3b8;font-size:11px}
+.in-both{background:#f0fdf4!important}.in-both td{color:#166534!important}
+.only-qual{background:#fefce8!important}
+.out-qual{background:#fff5f5!important;opacity:.7}
+.tag-hub{background:#bbf7d0;color:#166534;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.tag-eval{background:#fef9c3;color:#713f12;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:700}
+.tag-nao{background:#fee2e2;color:#991b1b;padding:2px 8px;border-radius:4px;font-size:10px;font-weight:600}
+
+/* ─── NOTES ───────────────────────────── */
+.note{font-size:12px;color:#475569;padding:12px 16px;background:#f8fafc;border-left:3px solid #cbd5e1;border-radius:0 8px 8px 0;margin:12px 0;line-height:1.6}
+.note.warn{border-left-color:#f97316;background:#fffbf5}
+.note.danger{border-left-color:#ef4444;background:#fff5f5}
+.note.info{border-left-color:#3b82f6;background:#eff6ff}
+.note.highlight{border-left-color:#7c3aed;background:#faf5ff}
+.question-box{background:#0f1b35;border-radius:12px;padding:20px 24px;margin:16px 0;color:#fff}
+.question-box .q{font-size:16px;font-weight:700;line-height:1.5;margin-bottom:8px}
+.question-box .q-sub{font-size:13px;color:#94a3b8;line-height:1.6}
+
+/* ─── NEXT STEPS ──────────────────────── */
+.steps{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin:14px 0}
+.step{background:#fff;border:1px solid #e2e8f0;border-radius:10px;padding:14px}
+.step-n{font-size:20px;font-weight:700;color:#3b82f6;margin-bottom:5px}
+.step-title{font-size:13px;font-weight:600;color:#0f172a;margin-bottom:4px}
+.step-desc{font-size:12px;color:#64748b;line-height:1.6}
+
+/* ─── PARTICIPATION ───────────────────── */
+.parti-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin-bottom:16px}
+.parti-card{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px}
+.parti-praça{font-size:13px;font-weight:700;color:#fff;padding:4px 12px;border-radius:6px;display:inline-block;margin-bottom:10px}
+.parti-row{display:flex;align-items:center;justify-content:space-between;padding:5px 0;border-bottom:1px solid #f1f5f9;font-size:12px}
+.parti-row:last-child{border-bottom:none}
+.parti-lbl{color:#64748b}
+.parti-val{font-weight:600;color:#0f172a}
+.parti-bar-wrap{width:60px;height:6px;background:#f1f5f9;border-radius:3px;margin-left:8px}
+.parti-bar-inner{height:100%;border-radius:3px}
+.warning-row .parti-val{color:#ef4444}
+.warning-row .parti-lbl{color:#ef4444}
+
+
+/* ─── row focus mode ──────────────────────────────────────── */
+.obs-table tr.dimmed td{opacity:.25;transition:opacity .2s}
+.obs-table tr.selected td{
+  background:#eff6ff!important;
+  border-top:2px solid #3b82f6!important;
+  border-bottom:2px solid #3b82f6!important;
+  transition:all .2s;
+}
+.obs-table tr.selected td:first-child{border-left:5px solid #3b82f6!important}
+.obs-table tr.selected .obs-txt{max-height:500px!important;background:#fff;border-color:#93c5fd}
+.obs-table tr.selected .obs-txt::after{content:''}
+.obs-table tr.hub-row.selected td{background:#dcfce7!important;border-color:#22c55e!important}
+.obs-table tr.hub-row.selected td:first-child{border-left:5px solid #22c55e!important}
+.obs-table tr.eval-row.selected td{background:#fef9c3!important;border-color:#eab308!important}
+.obs-table tr.eval-row.selected td:first-child{border-left:5px solid #eab308!important}
+/* floating chip showing selected student */
+.focus-chip{
+  position:fixed;bottom:20px;right:20px;
+  background:#0f1b35;color:#fff;
+  padding:8px 16px;border-radius:99px;
+  font-size:12px;font-weight:600;
+  box-shadow:0 4px 20px rgba(0,0,0,.3);
+  display:none;align-items:center;gap:8px;
+  z-index:999;cursor:pointer;transition:opacity .2s;
+}
+.focus-chip.visible{display:flex}
+.focus-chip-dot{width:8px;height:8px;border-radius:50%;background:#3b82f6}
+.focus-chip-dot.hub{background:#22c55e}
+.focus-chip-dot.eval{background:#eab308}
+
+/* ─── GEO CALLOUT ─────────────────────── */
+.geo-box{background:#fff;border:1px solid #e2e8f0;border-radius:12px;padding:16px 20px;display:flex;align-items:center;gap:20px;flex-wrap:wrap;margin:12px 0}
+.geo-praça{text-align:center;padding:0 16px}
+.geo-praça:not(:last-child){border-right:1px solid #e2e8f0}
+.geo-praça .n{font-size:28px;font-weight:700}
+.geo-praça .l{font-size:12px;color:#64748b}
+.geo-sp .n{color:#3b82f6}.geo-sjc .n{color:#7c3aed}
+.geo-bh .n{color:#22c55e}.geo-rj .n{color:#f97316}
+
+/* ─── CHART WRAP ──────────────────────── */
+.chart-wrap{position:relative;width:100%}
+</style>
+</head>
+<body>
+
+<!-- TOP NAVIGATION: DPA | MED 3 ANO -->
+<div class="top-nav">
+  <span class="top-nav-title">Hub de Carreira</span>
+  <button class="eixo-btn active" onclick="showEixo('dpa')">DPA — Decisão Profissional</button>
+  <button class="eixo-btn" onclick="showEixo('med')">MED 3º Ano</button>
+</div>
+
+<!-- ════════════════════════════════════════════════════════════
+     EIXO 1: DPA
+════════════════════════════════════════════════════════════ -->
+<div class="eixo active" id="eixo-dpa">
+  <div class="inner-nav">
+    <button class="inner-btn active" onclick="showSection('dpa','dpa-dash')">Visão Geral</button>
+    <button class="inner-btn" onclick="showSection('dpa','dpa-sel')">Ranking & Observações</button>
+    <button class="inner-btn" onclick="showSection('dpa','dpa-cmp')">Seleção Qualitativa</button>
+    <button class="inner-btn" onclick="showSection('dpa','dpa-prox')">Próximos Passos</button>
+  </div>
+
+  <!-- ── DPA: VISÃO GERAL ── -->
+  <div class="section active" id="dpa-dash">
+    <div class="eyebrow">DPA — Visão Geral</div>
+    <div class="page-title">Protocolo de Indicação — 23 alunos</div>
+    <div class="page-sub">Distribuição por prioridade, gênero, praça e dimensão predominante</div>
+
+    <div class="stats">
+      <div class="stat bl"><div class="stat-lbl">Total indicados</div><div class="stat-val">23</div><div class="stat-sub">4 praças · 12 escolas</div></div>
+      <div class="stat rd"><div class="stat-lbl">🔴 Alta prioridade</div><div class="stat-val">8</div><div class="stat-sub">≥ 60% do protocolo</div></div>
+      <div class="stat or"><div class="stat-lbl">🟠 Moderada</div><div class="stat-val">9</div><div class="stat-sub">40–59%</div></div>
+      <div class="stat am"><div class="stat-lbl">🟡 Contextual</div><div class="stat-val">6</div><div class="stat-sub">&lt; 40%</div></div>
+      <div class="stat pu"><div class="stat-lbl">♀ Feminino</div><div class="stat-val">15</div><div class="stat-sub">65% dos casos</div></div>
+      <div class="stat bl"><div class="stat-lbl">♂ Masculino</div><div class="stat-val">8</div><div class="stat-sub">35% dos casos</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Distribuição por praça</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-praca"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Dimensão principal dos casos</div>
+        <div class="chart-wrap" style="height:200px"><canvas id="c-dim"></canvas></div>
+      </div>
+    </div>
+
+    <div class="card" style="margin-top:0">
+      <div class="card-title">Distribuição por classificação × praça</div>
+      <div class="chart-wrap" style="height:180px"><canvas id="c-stack"></canvas></div>
+    </div>
+  </div>
+
+  <!-- ── DPA: RANKING & OBSERVAÇÕES ── -->
+  <div class="section" id="dpa-sel">
+    <div class="eyebrow">DPA — Ranking & Observações</div>
+    <div class="page-title">Classificação completa dos 23 indicados</div>
+    <div class="page-sub">Resultado do protocolo · ENEM Treineiro · Observação qualitativa do orientador</div>
+
+    <div class="note info" style="margin-bottom:14px">
+      <span style="display:inline-block;width:12px;height:12px;background:#bbf7d0;border:1.5px solid #86efac;border-radius:3px;margin-right:6px;vertical-align:middle"></span> Perfil Hub &nbsp;&nbsp;
+      <span style="display:inline-block;width:12px;height:12px;background:#fef9c3;border:1.5px solid #fde047;border-radius:3px;margin-right:6px;vertical-align:middle"></span> Sob Avaliação &nbsp;&nbsp;
+      Clique na observação para expandir.
+    </div>
+
+    <div style="overflow-x:auto">
+    <table class="obs-table">
+      <thead><tr>
+        <th style="width:30px">#</th>
+        <th style="min-width:120px">Nome</th>
+        <th>Praça</th>
+        <th>Escola</th>
+        <th style="min-width:130px">Curso de interesse</th>
+        <th>Rec.?</th>
+        <th>ENEM</th>
+        <th>Total</th>
+        <th>Classif.</th>
+        <th>Rigidez</th>
+        <th>Mob.</th>
+        <th>Conhec.</th>
+        <th>Vuln.</th>
+        <th style="min-width:280px">Observação do orientador</th>
+      </tr></thead>
+      <tbody id="obsBody"></tbody>
+    </table>
+    </div>
+
+    <!-- selection summary at the end -->
+    <div style="margin-top:28px;border-top:2px solid #e2e8f0;padding-top:20px">
+      <div class="lbl" style="margin-top:0">Resultado da seleção qualitativa — 10 vagas</div>
+      <div style="display:flex;gap:12px;flex-wrap:wrap">
+        <div style="background:#f0fdf4;border:1.5px solid #86efac;border-radius:10px;padding:14px 18px;flex:1;min-width:200px">
+          <div style="font-size:11px;font-weight:700;color:#166534;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">✅ Selecionados para o DPA — 6 alunos</div>
+          <div style="font-size:12px;font-weight:600;color:#166534;margin-bottom:6px">SP</div>
+          <div style="font-size:13px;font-weight:600;color:#0f172a;line-height:2">Kevin Steven Morales Cisternas<br>Fernanda dos Santos Freitas<br>Laura Evol Cavalcante de Souza</div>
+          <div style="font-size:12px;font-weight:600;color:#166534;margin-top:10px;margin-bottom:6px">SJC</div>
+          <div style="font-size:13px;font-weight:600;color:#0f172a;line-height:2">Maysa Rosangela Ferreira Cardoso<br>Maria Luiza Avila dos Santos<br>Ana Livia da Silva Tomaz</div>
+        </div>
+        <div style="background:#f8fafc;border:1.5px dashed #cbd5e1;border-radius:10px;padding:14px 18px;flex:1;min-width:200px">
+          <div style="font-size:11px;font-weight:700;color:#64748b;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">⬜ Vagas em aberto — 4</div>
+          <div style="font-size:13px;color:#94a3b8;font-style:italic">A definir</div>
+          <div style="font-size:11px;color:#94a3b8;margin-top:4px">Explorar perfis em BH e RJ</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <!-- ── DPA: SELEÇÃO QUALITATIVA ── -->
+  <div class="section" id="dpa-cmp">
+    <div class="eyebrow">DPA — Seleção</div>
+    <div class="page-title">Alunos selecionados para o DPA</div>
+    <div class="page-sub">6 alunos confirmados · SP e SJC · Seleção baseada em análise qualitativa dos protocolos</div>
+
+    <div class="lbl" style="margin-top:0">São Paulo — 3 alunos</div>
+    <div class="sel-grid">
+      <div class="sel-card hub">
+        <span class="sel-badge hub">✅ Selecionado</span>
+        <span class="sel-score alta" style="float:right">67,5%</span>
+        <div class="sel-name">Kevin Steven Morales Cisternas</div>
+        <div class="sel-meta">SP · Poliedro · Ciências Biológicas · ENEM treineiro: <strong>697,72</strong></div>
+        <div class="sel-note">Recentemente mudou de Agronomia para Biológicas com raciocínio frágil. Alta desconexão financeira. Aberto a explorar alternativas.</div>
+      </div>
+      <div class="sel-card hub">
+        <span class="sel-badge hub">✅ Selecionado</span>
+        <span class="sel-score alta" style="float:right">60,0%</span>
+        <div class="sel-name">Fernanda dos Santos Freitas</div>
+        <div class="sel-meta">SP · L. Castanho V.N.C. · Veterinária · ENEM treineiro: <strong>701,14</strong></div>
+        <div class="sel-note">Desempenho excelente e engajada. Optando por Veterinária mas tem clareza da falta de dados para a decisão. Genuinamente em dúvida.</div>
+      </div>
+      <div class="sel-card hub">
+        <span class="sel-badge hub">✅ Selecionado</span>
+        <span class="sel-score mod" style="float:right">47,5%</span>
+        <div class="sel-name">Laura Evol Cavalcante de Souza</div>
+        <div class="sel-meta">SP · Bandeirantes · RI / Adm. Pública · ENEM treineiro: <strong>670,94</strong></div>
+        <div class="sel-note">Entrou com interesse em RI, encontrou Adm Pública como alternativa. Muito influenciada por amigos na área. Quadro depressivo e ansiedade impactam no desempenho.</div>
+      </div>
+    </div>
+
+    <div class="lbl">São José dos Campos — 3 alunos</div>
+    <div class="sel-grid">
+      <div class="sel-card hub">
+        <span class="sel-badge hub">✅ Selecionado</span>
+        <span class="sel-score mod" style="float:right">57,5%</span>
+        <div class="sel-name">Maysa Rosangela Ferreira Cardoso</div>
+        <div class="sel-meta">SJC · Anglo · Biomedicina / Biol. · ENEM treineiro: <strong>655,10</strong></div>
+        <div class="sel-note">No 1º ano justificava pela afinidade com animais. No 2º ano migrou para Biomedicina/Biológicas. Apresenta resistência em pesquisar cursos recomendados.</div>
+      </div>
+      <div class="sel-card hub">
+        <span class="sel-badge hub">✅ Selecionado</span>
+        <span class="sel-score mod" style="float:right">42,5%</span>
+        <div class="sel-name">Maria Luiza Avila dos Santos</div>
+        <div class="sel-meta">SJC · Embraer · Jornalismo · ENEM treineiro: <strong>715,26</strong></div>
+        <div class="sel-note">Inclinada a Jornalismo (não apoiado), mas receptiva a Administração e Gestão Pública. Bom desempenho: ENEM 2025 média 715, PU 2025 média 724.</div>
+      </div>
+      <div class="sel-card hub">
+        <span class="sel-badge hub">✅ Selecionado</span>
+        <span class="sel-score ctx" style="float:right">32,5%</span>
+        <div class="sel-name">Ana Livia da Silva Tomaz</div>
+        <div class="sel-meta">SJC · Embraer · Direito · ENEM treineiro: <strong>—</strong></div>
+        <div class="sel-note">Demonstrou interesse por Odontologia. Desempenho não favorável para Direito (PU 2025: 635). Foi sugerido que considere Administração e Gestão Pública.</div>
+      </div>
+    </div>
+
+    <div class="note info" style="margin-top:4px">A pontuação do protocolo reflete a urgência da intervenção — não determina, por si só, o perfil Hub. Todos os casos acima foram validados qualitativamente pelos orientadores.</div>
+  </div>
+
+
+  <!-- ── DPA: PRÓXIMOS PASSOS ── -->
+  <div class="section" id="dpa-prox">
+    <div class="eyebrow">DPA — Próximos Passos</div>
+    <div class="page-title">Operação da turma</div>
+    <div class="page-sub">Cronograma de ações para formação e início dos acompanhamentos</div>
+
+    <div class="lbl">Vagas em aberto — 4</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">→</div>
+        <div class="step-title">Explorar BH e RJ</div>
+        <div class="step-desc">4 vagas em aberto para incluir praças sem representação na turma atual. Cabe explorar perfis de BH e RJ que se enquadrem no critério qualitativo.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">→</div>
+        <div class="step-title">Planilha de acompanhamento 3EM</div>
+        <div class="step-desc">Usar a planilha de acompanhamento de 3EM das coordenações como ferramenta de mapeamento de novos perfis DPA nas praças não representadas.</div>
+      </div>
+    </div>
+
+    <div class="lbl">Semana de 06/07 a 10/07</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-title">Reuniões de 3EM — BH e RJ</div>
+        <div class="step-desc">Participação nas reuniões de 3EM de BH e RJ para discutir possíveis encaminhamentos ao DPA e explorar os 4 perfis em aberto.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-title">Alinhamento com orientadores</div>
+        <div class="step-desc">Reunião com os orientadores dos alunos já selecionados para alinhar o formato do convite. Podemos usar o próprio espaço das reuniões de 3EM ou agendar encontros individuais, conforme for mais conveniente para cada praça.</div>
+      </div>
+    </div>
+
+    <div class="lbl">Semana de 13/07 a 17/07</div>
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-title">Convite aos alunos selecionados</div>
+        <div class="step-desc">Envio formal do convite aos 6 alunos já confirmados (+ possíveis novos perfis de BH e RJ).</div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-title">Agendamentos individuais</div>
+        <div class="step-desc">Agendamento individual com cada aluno para início dos acompanhamentos DPA.</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /eixo-dpa -->
+
+<!-- ════════════════════════════════════════════════════════════
+     EIXO 2: MED 3 ANO
+════════════════════════════════════════════════════════════ -->
+<div class="eixo" id="eixo-med">
+  <div class="inner-nav">
+    <button class="inner-btn active" onclick="showSection('med','med-geral')">Visão Geral</button>
+    <button class="inner-btn" onclick="showSection('med','med-parti')">Participação</button>
+    <button class="inner-btn" onclick="showSection('med','med-prox')">Próximos Passos</button>
+  </div>
+
+  <!-- ── MED: VISÃO GERAL ── -->
+  <div class="section active" id="med-geral">
+    <div class="eyebrow">MED 3º Ano — Visão Geral</div>
+    <div class="page-title">36 alunos elegíveis ao eixo</div>
+    <div class="page-sub">Após validação dos orientadores · Distribuição por praça</div>
+
+    <div class="stats" style="grid-template-columns:repeat(5,1fr)">
+      <div class="stat bl"><div class="stat-lbl">Total elegíveis</div><div class="stat-val">36</div><div class="stat-sub">validados pelos orients.</div></div>
+      <div class="stat bl"><div class="stat-lbl">SP</div><div class="stat-val">9</div><div class="stat-sub">25% do total</div></div>
+      <div class="stat gn"><div class="stat-lbl">BH</div><div class="stat-val">8</div><div class="stat-sub">22% do total</div></div>
+      <div class="stat or"><div class="stat-lbl">RJ</div><div class="stat-val">12</div><div class="stat-sub">33% do total</div></div>
+      <div class="stat pu"><div class="stat-lbl">SJC</div><div class="stat-val">7</div><div class="stat-sub">19% do total</div></div>
+    </div>
+
+    <div class="two-col">
+      <div class="card">
+        <div class="card-title">Distribuição por praça</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="c-med-praca"></canvas></div>
+      </div>
+      <div class="card">
+        <div class="card-title">Participação consolidada — encontros aluno</div>
+        <div class="chart-wrap" style="height:220px"><canvas id="c-med-parti"></canvas></div>
+      </div>
+    </div>
+
+    <div class="note warn">RJ concentra o maior volume (12 alunos, 33%), seguida de SP (9). SJC tem o menor índice de presença no encontro com aluno (4/7 = 57%) e maior proporção de casos sem participação de aluno e família.</div>
+  </div>
+
+  <!-- ── MED: PARTICIPAÇÃO ── -->
+  <div class="section" id="med-parti">
+    <div class="eyebrow">MED 3º Ano — Participação</div>
+    <div class="page-title">Participação por praça</div>
+    <div class="page-sub">Encontro com aluno · Encontro com responsáveis · Painel de Realidade (avaliação) · Casos sem participação</div>
+
+    <div class="parti-grid">
+      <!-- BH -->
+      <div class="parti-card">
+        <div class="parti-praça" style="background:#166534">BH · 8 alunos</div>
+        <div class="parti-row">
+          <span class="parti-lbl">Encontro aluno</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:50%;background:#22c55e"></div></div>
+            <span class="parti-val">4 / 8 <span style="color:#94a3b8;font-weight:400">(50%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row">
+          <span class="parti-lbl">Encontro responsáveis</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:75%;background:#86efac"></div></div>
+            <span class="parti-val">6 / 8 <span style="color:#94a3b8;font-weight:400">(75%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row">
+          <span class="parti-lbl">Avaliação respondida (painel)</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:75%;background:#22c55e"></div></div>
+            <span class="parti-val">6 / 8 <span style="color:#94a3b8;font-weight:400">(75%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row warning-row">
+          <span class="parti-lbl">Sem participação (aluno e família)</span>
+          <span class="parti-val">2 casos</span>
+        </div>
+      </div>
+
+      <!-- RJ -->
+      <div class="parti-card">
+        <div class="parti-praça" style="background:#c2410c">RJ · 12 alunos</div>
+        <div class="parti-row">
+          <span class="parti-lbl">Encontro aluno</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:92%;background:#f97316"></div></div>
+            <span class="parti-val">11 / 12 <span style="color:#94a3b8;font-weight:400">(92%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row">
+          <span class="parti-lbl">Encontro responsáveis</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:58%;background:#fdba74"></div></div>
+            <span class="parti-val">7 / 12 <span style="color:#94a3b8;font-weight:400">(58%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row">
+          <span class="parti-lbl">Avaliação respondida (painel)</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:92%;background:#f97316"></div></div>
+            <span class="parti-val">11 / 12 <span style="color:#94a3b8;font-weight:400">(92%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row warning-row">
+          <span class="parti-lbl">Sem participação (aluno e família)</span>
+          <span class="parti-val">1 caso</span>
+        </div>
+      </div>
+
+      <!-- SJC -->
+      <div class="parti-card">
+        <div class="parti-praça" style="background:#5b21b6">SJC · 7 alunos</div>
+        <div class="parti-row">
+          <span class="parti-lbl">Encontro aluno</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:57%;background:#7c3aed"></div></div>
+            <span class="parti-val">4 / 7 <span style="color:#94a3b8;font-weight:400">(57%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row">
+          <span class="parti-lbl">Encontro responsáveis</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:43%;background:#c4b5fd"></div></div>
+            <span class="parti-val">3 / 7 <span style="color:#94a3b8;font-weight:400">(43%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row">
+          <span class="parti-lbl">Avaliação respondida (painel)</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:100%;background:#7c3aed"></div></div>
+            <span class="parti-val">7 / 7 <span style="color:#94a3b8;font-weight:400">(100%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row warning-row">
+          <span class="parti-lbl">Sem participação (aluno e família)</span>
+          <span class="parti-val" style="color:#dc2626;font-weight:700">3 casos ⚠️</span>
+        </div>
+      </div>
+
+      <!-- SP -->
+      <div class="parti-card">
+        <div class="parti-praça" style="background:#1d4ed8">SP · 9 alunos</div>
+        <div class="parti-row">
+          <span class="parti-lbl">Encontro aluno</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:56%;background:#3b82f6"></div></div>
+            <span class="parti-val">5 / 9 <span style="color:#94a3b8;font-weight:400">(56%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row">
+          <span class="parti-lbl">Encontro responsáveis</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:78%;background:#93c5fd"></div></div>
+            <span class="parti-val">7 / 9 <span style="color:#94a3b8;font-weight:400">(78%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row">
+          <span class="parti-lbl">Avaliação respondida (painel)</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="parti-bar-wrap"><div class="parti-bar-inner" style="width:89%;background:#3b82f6"></div></div>
+            <span class="parti-val">8 / 9 <span style="color:#94a3b8;font-weight:400">(89%)</span></span>
+          </div>
+        </div>
+        <div class="parti-row warning-row">
+          <span class="parti-lbl">Sem participação (aluno e família)</span>
+          <span class="parti-val">1 caso</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="note danger"><strong>Atenção SJC:</strong> 3 casos sem participação de aluno e família (43% do total da praça) — o maior índice proporcional. Vale compreender os motivos com a coordenação antes da devolutiva.</div>
+    <div class="note info">RJ se destaca positivamente: 92% de participação dos alunos nos encontros. O engajamento das famílias (58%) ainda tem espaço para crescer.</div>
+  </div>
+
+  <!-- ── MED: PRÓXIMOS PASSOS ── -->
+  <div class="section" id="med-prox">
+    <div class="eyebrow">MED 3º Ano — Próximos Passos</div>
+    <div class="page-title">Ações após o mapeamento</div>
+    <div class="page-sub">Sequência de ações para o acompanhamento estruturado dos 36 elegíveis</div>
+
+    <div class="steps">
+      <div class="step">
+        <div class="step-n">01</div>
+        <div class="step-title">Compreender ausências</div>
+        <div class="step-desc">Mapear com as praças os possíveis motivos de não participação de alunos e famílias — especialmente SJC (3 casos).</div>
+      </div>
+      <div class="step">
+        <div class="step-n">02</div>
+        <div class="step-title">Início das devolutivas</div>
+        <div class="step-desc">As devolutivas terão início a partir de 06/07, através de vídeochamada ou presencialmente, conforme disponibilidade de cada praça.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">03</div>
+        <div class="step-title">Acompanhamento estruturado</div>
+        <div class="step-desc">1 encontro por mês com cada aluno. Cada orientador receberá o resultado do painel referente aos seus alunos.</div>
+      </div>
+      <div class="step">
+        <div class="step-n">04</div>
+        <div class="step-title">Presença nas reuniões de 3EM</div>
+        <div class="step-desc">Participação nas reuniões de 3EM de cada praça para compartilhar atualizações dos encontros e alinhar encaminhamentos com as equipes.</div>
+      </div>
+    </div>
+  </div>
+</div><!-- /eixo-med -->
+
+<script>
+// ── navigation ─────────────────────────────────────────────────
+function showEixo(id){
+  document.querySelectorAll('.eixo-btn').forEach((b,i)=>b.classList.toggle('active',['dpa','med'][i]===id));
+  document.querySelectorAll('.eixo').forEach(e=>e.classList.toggle('active',e.id==='eixo-'+id));
+}
+function showSection(eixo,id){
+  const btns=document.querySelectorAll(`#eixo-${eixo} .inner-btn`);
+  const secs=document.querySelectorAll(`#eixo-${eixo} .section`);
+  secs.forEach(s=>s.classList.toggle('active',s.id===id));
+  btns.forEach(b=>{
+    const target=b.getAttribute('onclick').match(/'([^']+)'\)/)[1];
+    b.classList.toggle('active',target===id);
+  });
+  if(id==='dpa-dash'&&!window.chartsInited) initCharts();
+  if(id==='med-geral'&&!window.medChartsInited) initMedCharts();
+}
+// ── DPA data ───────────────────────────────────────────────────
+const S=[
+  {r:1,name:"Ana Carolina",praça:"BH",curso:"Psicologia",rec:false,pct:82.5,cl:"alta",sel:null},
+  {r:2,name:"Vitor",praça:"SP",curso:"Economia",rec:true,pct:70.0,cl:"alta",sel:null},
+  {r:3,name:"Isabella",praça:"BH",curso:"Eng. Química",rec:true,pct:67.5,cl:"alta",sel:null},
+  {r:4,name:"Kevin",praça:"SP",curso:"Ciências Biológicas",rec:false,pct:67.5,cl:"alta",sel:"hub"},
+  {r:5,name:"Melissa",praça:"SP",curso:"Direito",rec:true,pct:67.5,cl:"alta",sel:null},
+  {r:6,name:"Erica",praça:"SP",curso:"Design / Adm",rec:true,pct:62.5,cl:"alta",sel:null},
+  {r:7,name:"Luiggi",praça:"SP",curso:"Economia",rec:true,pct:60.0,cl:"alta",sel:null},
+  {r:8,name:"Fernanda",praça:"SP",curso:"Veterinária",rec:false,pct:60.0,cl:"alta",sel:"hub"},
+  {r:9,name:"Maysa",praça:"SJC",curso:"Biomedicina/Biol.",rec:false,pct:57.5,cl:"mod",sel:"hub"},
+  {r:10,name:"Bianca",praça:"BH",curso:"Direito e Design",rec:false,pct:55.0,cl:"mod",sel:null},
+  {r:11,name:"Jonathan",praça:"SP",curso:"Direito e Economia",rec:true,pct:55.0,cl:"mod",sel:null},
+  {r:12,name:"Laura",praça:"SP",curso:"RI / Adm. Pública",rec:true,pct:47.5,cl:"mod",sel:"eval"},
+  {r:13,name:"G. Barreto",praça:"BH",curso:"Eng. Civil",rec:true,pct:47.5,cl:"mod",sel:null},
+  {r:14,name:"Vitoria",praça:"SP",curso:"Direito / Adm.",rec:true,pct:45.0,cl:"mod",sel:null},
+  {r:15,name:"Julia",praça:"SP",curso:"Publicidade / Adm",rec:false,pct:42.5,cl:"mod",sel:"eval"},
+  {r:16,name:"Maria Luiza",praça:"SJC",curso:"Jornalismo",rec:false,pct:42.5,cl:"mod",sel:"hub"},
+  {r:17,name:"Naomi",praça:"SP",curso:"Direito",rec:true,pct:40.0,cl:"mod",sel:null},
+  {r:18,name:"Marcos",praça:"BH",curso:"Economia / Direito",rec:true,pct:37.5,cl:"ctx",sel:null},
+  {r:19,name:"Ana Lívia",praça:"SJC",curso:"Direito",rec:true,pct:32.5,cl:"ctx",sel:"eval"},
+  {r:20,name:"Arthur",praça:"BH",curso:"Sistemas de Info.",rec:true,pct:32.5,cl:"ctx",sel:null},
+  {r:21,name:"G. Amado",praça:"RJ",curso:"Direito",rec:true,pct:27.5,cl:"ctx",sel:null},
+  {r:22,name:"Marina",praça:"BH",curso:"Eng. Mecânica",rec:true,pct:27.5,cl:"ctx",sel:null},
+  {r:23,name:"Lidyanne",praça:"BH",curso:"Direito",rec:true,pct:27.5,cl:"ctx",sel:null},
+];
+const clBg={alta:"#fee2e2",mod:"#ffedd5",ctx:"#fef9c3"};
+const clFg={alta:"#991b1b",mod:"#9a3412",ctx:"#713f12"};
+const clLbl={alta:"🔴 Alta",mod:"🟠 Moderada",ctx:"🟡 Contextual"};
+
+// comparison table removed — tab replaced by Seleção Qualitativa
+
+
+// ── obs table data ─────────────────────────────────────────────
+const obsData=[
+  {name:"Ana Carolina",fn:"Ana Carolina",praca:"BH",escola:"Bernoulli",curso:"Psicologia",rec:false,pct:82.5,cl:"alta",rig:78.6,mob:90.0,con:100.0,vul:25.0,enem:"—",sel:null,obs:"Aluna com dúvidas em relação à escolha de curso e universidade, atualmente com escolha por curso não recomendado."},
+  {name:"Vitor",fn:"Vitor",praca:"SP",escola:"L. Castanho A.B.V.",curso:"Economia",rec:true,pct:70.0,cl:"alta",rig:78.6,mob:60.0,con:83.3,vul:25.0,enem:"645,86",sel:null,obs:"Notas ainda não apresentam boas possibilidades de aprovação no vestibular. Mais resistente em construir rotina de estudos eficaz. Não tem muito conhecimento sobre os vestibulares e o que o motiva realmente para prestar Economia."},
+  {name:"Isabella",fn:"Isabella",praca:"BH",escola:"Bernoulli",curso:"Eng. Química",rec:true,pct:67.5,cl:"alta",rig:64.3,mob:40.0,con:91.7,vul:75.0,enem:"626,74",sel:null,obs:"Trouxe desejo de estudar fora no 3° ano, especificamente na Alemanha, mas não é uma escolha assertiva e consolidada. Aluna com dificuldades acadêmicas e nota abaixo do necessário para aprovação."},
+  {name:"Kevin",fn:"Kevin",praca:"SP",escola:"Poliedro",curso:"Ciências Biológicas",rec:false,pct:67.5,cl:"alta",rig:28.6,mob:100.0,con:91.7,vul:50.0,enem:"697,72",sel:"hub",obs:"Recentemente mudou de Agronomia para Biológicas com raciocínio frágil: \"eu gosto de biologia, então vou fazer esse curso\". Alta desconexão financeira. Aberto a explorar alternativas."},
+  {name:"Melissa",fn:"Melissa",praca:"SP",escola:"L. Castanho A.B.V.",curso:"Direito",rec:true,pct:67.5,cl:"alta",rig:57.1,mob:70.0,con:75.0,vul:75.0,enem:"627,46",sel:null,obs:"Ainda construindo uma boa rotina de estudos. Possui justificativas superficiais na escolha da profissão."},
+  {name:"Erica",fn:"Erica",praca:"SP",escola:"Rio Branco",curso:"Design / Adm",rec:true,pct:62.5,cl:"alta",rig:21.4,mob:90.0,con:91.7,vul:50.0,enem:"653,88",sel:null,obs:"Sempre esteve em uma escolha caricata por Medicina por considerar retorno financeiro rápido. Reconhece atualmente a superficialidade da escolha. Está em dúvida entre Design e Adm."},
+  {name:"Luiggi",fn:"Luiggi",praca:"SP",escola:"Dante Alighieri",curso:"Economia",rec:true,pct:60.0,cl:"alta",rig:100.0,mob:20.0,con:66.7,vul:0.0,enem:"665,40",sel:null,obs:"Aluno esforçado e desenvolto, porém teimoso. Escolha em Economia desde a entrada. No final do 2°EM trouxe desejo de universidade na Europa (Itália) de forma fantasiosa e idealizada. Sem notas competitivas nos simulados. Resistência em explorar planos B em Administração."},
+  {name:"Fernanda",fn:"Fernanda",praca:"SP",escola:"L. Castanho V.N.C.",curso:"Veterinária",rec:false,pct:60.0,cl:"alta",rig:64.3,mob:90.0,con:50.0,vul:0.0,enem:"701,14",sel:"hub",obs:"Desempenho excelente e engajada. Forte recomendação para o ES. Optando por Veterinária mas tem clareza da falta de dados para a decisão. Apresenta-se genuinamente em dúvida."},
+  {name:"Maysa",fn:"Maysa",praca:"SJC",escola:"Anglo",curso:"Biomedicina / Biol.",rec:false,pct:57.5,cl:"mod",rig:71.4,mob:60.0,con:41.7,vul:50.0,enem:"655,10",sel:"hub",obs:"No 1º ano justificava pela afinidade com animais. No 2º ano migrou para Biomedicina/Biológicas, considerando trabalhar com perícia criminal. Apresenta resistência em pesquisar cursos recomendados."},
+  {name:"Bianca",fn:"Bianca",praca:"BH",escola:"Magnum",curso:"Direito e Design",rec:false,pct:55.0,cl:"mod",rig:64.3,mob:40.0,con:66.7,vul:25.0,enem:"625,46",sel:null,obs:"Interesse em Direito e Design sem desempenho acadêmico condizente. Risco de evasão: estratégia de ingressar em cursinho em 2027 caso não seja aprovada."},
+  {name:"Jonathan",fn:"Jonathan",praca:"SP",escola:"L. Castanho A.B.V.",curso:"Direito e Economia",rec:true,pct:55.0,cl:"mod",rig:57.1,mob:50.0,con:50.0,vul:75.0,enem:"592,66",sel:null,obs:"Não possui nota e consistência para os cursos almejados. Precisa amadurecer mais a ideia."},
+  {name:"Laura",fn:"Laura",praca:"SP",escola:"Bandeirantes",curso:"RI / Adm. Pública",rec:true,pct:47.5,cl:"mod",rig:71.4,mob:10.0,con:50.0,vul:50.0,enem:"670,94",sel:"eval",obs:"Entrou no programa com interesse em RI. Ao longo do 2°EM encontrou Adm Pública como alternativa. Muito influenciada por amigos na área. Apresenta resultados medianos (680 ENEM 2025). Quadro depressivo e ansiedade impactam no desempenho. Pai faleceu quando tinha 10 anos. Mora com a mãe e irmã mais velha."},
+  {name:"G. Barreto",fn:"G. Barreto",praca:"BH",escola:"Bernoulli",curso:"Eng. Civil",rec:true,pct:47.5,cl:"mod",rig:35.7,mob:20.0,con:83.3,vul:50.0,enem:"606,64",sel:null,obs:"Aluno muito instável nas escolhas de curso. Desempenho acadêmico abaixo do necessário para aprovação."},
+  {name:"Vitoria",fn:"Vitoria",praca:"SP",escola:"Bandeirantes",curso:"Direito / Adm.",rec:true,pct:45.0,cl:"mod",rig:57.1,mob:20.0,con:50.0,vul:50.0,enem:"610,10",sel:null,obs:"Grande dificuldade acadêmica em natureza e exatas. Escolha em Direito desde a infância, muito consciente. Porém sem desempenho para aprovação (610 ENEM 2025). Elege Adm Pública como plano B mas é incerta em seguir esse caminho."},
+  {name:"Julia",fn:"Julia",praca:"SP",escola:"Bandeirantes",curso:"Publicidade / Adm",rec:false,pct:42.5,cl:"mod",rig:21.4,mob:30.0,con:75.0,vul:50.0,enem:"563,34",sel:"eval",obs:"Dificuldades acadêmicas significativas ao longo dos anos. Baixa autoestima e ansiedade (hoje mais tranquila). Transitou de Medicina para Comunicação após intervenções. Tem interesse em Adm como plano A. Não apresenta desempenho para aprovações (ENEM 2024: 538; 2025: 563). Risco real de seguir em comunicação em universidade não apoiada e evadir."},
+  {name:"Maria Luiza",fn:"Maria Luiza",praca:"SJC",escola:"Embraer",curso:"Jornalismo",rec:false,pct:42.5,cl:"mod",rig:35.7,mob:50.0,con:50.0,vul:25.0,enem:"715,26",sel:"hub",obs:"Inclinada a Jornalismo (não apoiado), mas receptiva a Administração e Gestão Pública. Bom desempenho: ENEM 2025 média 715, PU 2025 média 724."},
+  {name:"Naomi",fn:"Naomi",praca:"SP",escola:"Bandeirantes",curso:"Direito",rec:true,pct:40.0,cl:"mod",rig:78.6,mob:0.0,con:25.0,vul:50.0,enem:"666,52",sel:null,obs:"Percurso: Jornalismo → RI → Direito. Escolha muito alinhada à personalidade. Dificuldades acadêmicas e baixa autoestima ao longo do EM. Notas pouco competitivas (666 ENEM 2025). Resistente a plano B em Adm Pública. Risco de evasão ou rompimento com o programa caso não seja aprovada."},
+  {name:"Marcos",fn:"Marcos",praca:"BH",escola:"Bernoulli",curso:"Economia / Direito",rec:true,pct:37.5,cl:"ctx",rig:14.3,mob:20.0,con:83.3,vul:25.0,enem:"647,00",sel:null,obs:"Sem escolha consolidada. Pouco conhecimento relevante sobre a profissão e mercado."},
+  {name:"Ana Lívia",fn:"Ana Lívia",praca:"SJC",escola:"Embraer",curso:"Direito",rec:true,pct:32.5,cl:"ctx",rig:28.6,mob:40.0,con:25.0,vul:50.0,enem:"—",sel:"eval",obs:"Demonstrou recentemente interesse por Odontologia. Desempenho não favorável para Direito (PU 2025: 635; ENEM não disponível). Foi sugerido que considere Administração e Gestão Pública."},
+  {name:"Arthur",fn:"Arthur",praca:"BH",escola:"Santo Antônio",curso:"Sistemas de Info.",rec:true,pct:32.5,cl:"ctx",rig:57.1,mob:20.0,con:25.0,vul:0.0,enem:"673,40",sel:null,obs:"Nota pouco competitiva para curso tech. Mais fechado para sair de BH."},
+  {name:"G. Amado",fn:"G. Amado",praca:"RJ",escola:"Liceu Franco",curso:"Direito",rec:true,pct:27.5,cl:"ctx",rig:35.7,mob:60.0,con:0.0,vul:0.0,enem:"621,44",sel:null,obs:"Interesse consistente em rap e justiça social. Inicialmente indicou História. Acompanhamento voltado a ampliar possibilidades em gestão e administração pública."},
+  {name:"Marina",fn:"Marina",praca:"BH",escola:"Santo Antônio",curso:"Eng. Mecânica",rec:true,pct:27.5,cl:"ctx",rig:42.9,mob:20.0,con:25.0,vul:0.0,enem:"711,24",sel:null,obs:"Sem nota competitiva para Eng. Mecânica na UFMG. Possibilidade no CEFET ou UFOP. Não é fechada — acreditamos que a reversão pode acontecer."},
+  {name:"Lidyanne",fn:"Lidyanne",praca:"BH",escola:"Santo Antônio",curso:"Direito",rec:true,pct:27.5,cl:"ctx",rig:35.7,mob:40.0,con:16.7,vul:0.0,enem:"699,54",sel:null,obs:"Sem nota para Direito nas universidades recomendadas em BH. Aberta a sair de BH e ampliar estratégias: GPP, Adm Pública, FGV."}
+];
+const clBg2={alta:"#fee2e2",mod:"#ffedd5",ctx:"#fef9c3"};
+const clFg2={alta:"#991b1b",mod:"#9a3412",ctx:"#713f12"};
+const clLbl2={alta:"🔴 Alta",mod:"🟠 Moderada",ctx:"🟡 Contextual"};
+const dimColors={rig:"#2563eb",mob:"#0f766e",con:"#7c3aed",vul:"#ea580c"};
+function pctBar(v,color){
+  return `<div class="pct-mini"><div class="pct-bar-mini" style="width:${Math.max(v*.4,2)}px;background:${color}"></div><span style="font-size:10px;font-weight:600;color:${color}">${v.toFixed(0)}%</span></div>`;
+}
+const ob=document.getElementById('obsBody');
+obsData.forEach((s,i)=>{
+  const rowCls=s.sel==='hub'?'hub-row':s.sel==='eval'?'eval-row':'';
+  const nameIndicator=s.sel==='hub'?'<span style="display:inline-block;width:8px;height:8px;background:#22c55e;border-radius:50%;margin-right:5px;vertical-align:middle"></span>':s.sel==='eval'?'<span style="display:inline-block;width:8px;height:8px;background:#eab308;border-radius:50%;margin-right:5px;vertical-align:middle"></span>':'<span style="display:inline-block;width:8px;height:8px;margin-right:5px"></span>';
+  ob.innerHTML+=`<tr class="${rowCls}" onclick="handleRowClick(this,'${s.fn}','${s.sel||''}')" style="cursor:pointer">
+    <td style="font-weight:700;color:#fff;font-size:11px;text-align:center;background:#334155;min-width:28px">${i+1}</td>
+    <td style="font-weight:600;color:#0f172a;white-space:nowrap">${nameIndicator}${s.fn}</td>
+    <td style="color:#64748b">${s.praca}</td>
+    <td style="color:#64748b;font-size:10px;white-space:nowrap">${s.escola}</td>
+    <td style="font-size:11px;color:#334155">${s.curso}</td>
+    <td><span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:${s.rec?'#dcfce7':'#fee2e2'};color:${s.rec?'#166534':'#991b1b'}">${s.rec?'Sim':'Não'}</span></td>
+    <td style="font-size:11px;font-weight:600;color:#334155;white-space:nowrap">${s.enem}</td>
+    <td><span style="font-size:11px;font-weight:700;padding:2px 8px;border-radius:4px;background:${clBg2[s.cl]};color:${clFg2[s.cl]}">${s.pct}%</span></td>
+    <td><span style="font-size:10px;font-weight:600;padding:2px 7px;border-radius:4px;background:${clBg2[s.cl]};color:${clFg2[s.cl]}">${clLbl2[s.cl]}</span></td>
+    <td>${pctBar(s.rig,dimColors.rig)}</td>
+    <td>${pctBar(s.mob,dimColors.mob)}</td>
+    <td>${pctBar(s.con,dimColors.con)}</td>
+    <td>${pctBar(s.vul,dimColors.vul)}</td>
+    <td><div class="obs-txt" onclick="this.classList.toggle('open')">${s.obs}</div></td>
+  </tr>`;
+});
+
+
+// ── row selection ──────────────────────────────────────────────
+let selectedRow = null;
+function handleRowClick(tr, name, sel) {
+  const allRows = document.querySelectorAll('#obsBody tr');
+  const chip = document.getElementById('focusChip');
+  const chipName = document.getElementById('chipName');
+  const chipDot = document.getElementById('chipDot');
+
+  if (selectedRow === tr) {
+    // deselect
+    clearSelection();
+    return;
+  }
+  selectedRow = tr;
+  allRows.forEach(r => {
+    r.classList.remove('selected','dimmed');
+    if (r !== tr) r.classList.add('dimmed');
+    else r.classList.add('selected');
+  });
+  // expand obs txt in selected row
+  const obs = tr.querySelector('.obs-txt');
+  if (obs) obs.classList.add('open');
+
+  // show chip
+  chipName.textContent = name;
+  chipDot.className = 'focus-chip-dot' + (sel==='hub'?' hub':sel==='eval'?' eval':'');
+  chip.classList.add('visible');
+}
+function clearSelection() {
+  selectedRow = null;
+  document.querySelectorAll('#obsBody tr').forEach(r => {
+    r.classList.remove('selected','dimmed');
+  });
+  document.getElementById('focusChip').classList.remove('visible');
+}
+
+// ── init charts ────────────────────────────────────────────────
+window.chartsInited=false;
+window.medChartsInited=false;
+
+function initCharts(){
+  window.chartsInited=true;
+  new Chart(document.getElementById('c-praca'),{type:'bar',
+    data:{labels:['SP','BH','SJC','RJ'],datasets:[{data:[11,8,3,1],backgroundColor:['#3b82f6','#22c55e','#7c3aed','#f97316'],borderRadius:6,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true,ticks:{stepSize:2},grid:{color:'#f8fafc'}},x:{grid:{display:false}}}}
+  });
+  new Chart(document.getElementById('c-dim'),{type:'bar',
+    data:{labels:['Conhecimento','Rigidez','Mobilidade','Vulnerabilidades'],datasets:[{data:[10,7,4,2],backgroundColor:['#7c3aed','#2563eb','#0f766e','#f97316'],borderRadius:5,borderSkipped:false}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},indexAxis:'y',scales:{x:{beginAtZero:true,ticks:{stepSize:2},grid:{color:'#f8fafc'}},y:{grid:{display:false},ticks:{font:{size:11}}}}}
+  });
+  new Chart(document.getElementById('c-stack'),{type:'bar',
+    data:{labels:['SP','BH','SJC','RJ'],
+      datasets:[
+        {label:'🔴 Alta',data:[6,2,1,0],backgroundColor:'#ef4444',borderRadius:3},
+        {label:'🟠 Moderada',data:[4,4,1,0],backgroundColor:'#f97316',borderRadius:3},
+        {label:'🟡 Contextual',data:[1,2,1,1],backgroundColor:'#eab308',borderRadius:3}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}},scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,beginAtZero:true,ticks:{stepSize:2},grid:{color:'#f8fafc'}}}}
+  });
+  new Chart(document.getElementById('c-rec'),{type:'doughnut',
+    data:{labels:['Curso recomendado','Curso não apoiado'],datasets:[{data:[16,7],backgroundColor:['#3b82f6','#f97316'],borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}}
+  });
+}
+
+function initMedCharts(){
+  window.medChartsInited=true;
+  new Chart(document.getElementById('c-med-praca'),{type:'doughnut',
+    data:{labels:['SP (9)','BH (8)','RJ (12)','SJC (7)'],datasets:[{data:[9,8,12,7],backgroundColor:['#3b82f6','#22c55e','#f97316','#7c3aed'],borderWidth:3,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}}}
+  });
+  new Chart(document.getElementById('c-med-parti'),{type:'bar',
+    data:{labels:['BH (8)','RJ (12)','SJC (7)','SP (9)'],
+      datasets:[
+        {label:'Encontro aluno',data:[4,11,4,5],backgroundColor:'#3b82f6',borderRadius:4},
+        {label:'Encontro responsáveis',data:[6,7,3,7],backgroundColor:'#93c5fd',borderRadius:4}
+      ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:12,font:{size:11}}}},scales:{y:{beginAtZero:true,ticks:{stepSize:2},grid:{color:'#f8fafc'}},x:{grid:{display:false}}}}
+  });
+}
+
+// init visible charts on load
+window.addEventListener('load',()=>{ initCharts(); });
+</script>
+
+<div class="focus-chip" id="focusChip" onclick="clearSelection()">
+  <div class="focus-chip-dot" id="chipDot"></div>
+  <span id="chipName"></span>
+  <span style="color:#64748b;font-size:11px">· clique para limpar</span>
+</div>
+
+</body>
+</html>
